@@ -58,3 +58,27 @@ function deepMapCopy(map) {
   }
   return newMap;
 }
+
+function selectFromInterval(arr, firstValue, secondValue) {
+  if (!Array.isArray(arr) || !arr || !arr.length || [...arguments].length < 3) {
+    throw new Error();
+  }
+  arr.forEach(value => {
+    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+      throw new Error();
+    }
+  });
+  [...arguments].splice(1, 2).forEach((value) => {
+    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+      throw new Error();
+    }
+  })
+
+  let minValue = secondValue,
+      maxValue = firstValue;
+  if (firstValue < secondValue) {
+    minValue = firstValue;
+    maxValue = secondValue;
+  }
+  return arr.filter(number => number <= maxValue && number >= minValue);
+}
