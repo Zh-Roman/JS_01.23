@@ -82,3 +82,36 @@ function selectFromInterval(arr, firstValue, secondValue) {
   }
   return arr.filter(number => number <= maxValue && number >= minValue);
 }
+
+function createIterable(fromValue, toValue) {
+  if ([...arguments].length < 2 || arguments[1] <= arguments[0]) {
+    throw new Error();
+  }
+  [...arguments].forEach((value) => {
+    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+      throw new Error();
+    }
+  })
+  return {
+    from: fromValue,
+    to: toValue,
+
+    [Symbol.iterator]() {
+      this.currentValue = this.from;
+      return this;
+    },
+
+    next() {
+      if (this.currentValue <= this.to) {
+        return {
+          done: false,
+          value: this.currentValue++,
+        };
+      } else {
+        return {
+          done: true,
+        };
+      }
+    },
+  };
+}
