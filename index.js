@@ -1,17 +1,11 @@
-Array.prototype.customFilter = function (callback, obj) {
-  const outputArr = [];
-  for (let i = 0; i < this.length; i++) {
-    if (callback.apply(obj, [this[i], i, this])) {
-      outputArr.push(this[i]);
+function curry(fn) {
+  return function curring(...args) {
+    if (args.length >= fn.length) {
+      return fn.apply(this, args);
+    } else {
+      return function (...nextArgs) {
+        return curring.apply(this, [...args, ...nextArgs]);
+      };
     }
-  }
-  return outputArr;
-};
-
-function createDebounceFunction(fn, delay) {
-  let timeDelay;
-  return function (...args) {
-    clearTimeout(timeDelay);
-    timeDelay = setTimeout(() => fn(...args), delay);
   };
 }
