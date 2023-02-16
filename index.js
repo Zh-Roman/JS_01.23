@@ -124,3 +124,193 @@ class LinkedList {
     return outputList;
   };
 }
+
+function validateStringValue(value, minValue, maxValue) {
+  return (typeof value !== 'string' || value.length < minValue || value.length > maxValue);
+}
+
+function validateNumberValue(value, minValue, maxValue) {
+  return (isNaN(value) || typeof value !== 'number' || value < minValue || value > maxValue);
+}
+
+function notEqualsZero(value) {
+  return (!isFinite(value) || typeof value !== 'number' || value <= 0);
+}
+
+class Car {
+
+  #brand = '';
+  #model = '';
+  #yearOfManufacturing = 1950;
+  #maxSpeed = 100;
+  #maxFuelVolume = 20;
+  #fuelConsumption = 1;
+  #damage = 1;
+  #currentFuelVolume = 0;
+  #isStarted = false;
+  #mileage = 0;
+  #health = 100;
+
+  set brand(value) {
+    if (validateStringValue(value, 1, 50)) {
+      throw new Error('Invalid brand name');
+    }
+    this.#brand = value;
+  };
+
+  get brand() {
+    return this.#brand;
+  };
+
+  set model(value) {
+    if (validateStringValue(value, 1, 50)) {
+      throw new Error('Invalid model name');
+    }
+    this.#model = value;
+  };
+
+  get model() {
+    return this.#model;
+  };
+
+  set yearOfManufacturing(value) {
+    if (validateNumberValue(value, 1950, new Date().getFullYear())) {
+      throw new Error('Invalid year of manufacturing');
+    }
+    this.#yearOfManufacturing = value;
+  };
+
+  get yearOfManufacturing() {
+    return this.#yearOfManufacturing;
+  };
+
+  set maxSpeed(value) {
+    if (validateNumberValue(value, 100, 330)) {
+      throw new Error('Invalid max speed');
+    }
+    this.#maxSpeed = value;
+  };
+
+  get maxSpeed() {
+    return this.#maxSpeed;
+  };
+
+  set maxFuelVolume(value) {
+    if (validateNumberValue(value, 20, 100)) {
+      throw new Error('Invalid max fuel volume');
+    }
+    this.#maxFuelVolume = value;
+  };
+
+  get maxFuelVolume() {
+    return this.#maxFuelVolume;
+  };
+
+  set fuelConsumption(value) {
+    if (notEqualsZero(value)) {
+      throw new Error('Invalid fuel consumption');
+    }
+    this.#fuelConsumption = value;
+  };
+
+  get fuelConsumption() {
+    return this.#fuelConsumption;
+  };
+
+  set damage(value) {
+    if (validateNumberValue(value, 1, 5)) {
+      throw new Error('Invalid damage');
+    }
+    this.#damage = value;
+  };
+
+  get damage() {
+    return this.#damage;
+  };
+
+  get currentFuelVolume() {
+    return this.#currentFuelVolume;
+  };
+
+  get isStarted() {
+    return this.#isStarted;
+  };
+
+  get mileage() {
+    return this.#mileage;
+  };
+
+  get health() {
+    return this.#health;
+  };
+
+  start() {
+    if (this.isStarted) {
+      throw new Error('Car has already started');
+    } else {
+      this.#isStarted = true;
+    }
+  };
+
+  shutDownEngine() {
+    if (!this.isStarted) {
+      throw new Error('Car hasn\'t started yet');
+    } else {
+      this.#isStarted = false;
+    }
+  };
+
+  fillUpGasTank(fuelAmount) {
+    if (notEqualsZero(fuelAmount)) {
+      throw new Error('Invalid fuel amount');
+    }
+    if ((this.currentFuelVolume + fuelAmount) > this.maxFuelVolume) {
+      throw new Error('Too much fuel');
+    }
+    if (this.isStarted) {
+      throw new Error('You have to shut down your car first');
+    }
+    this.#currentFuelVolume += fuelAmount;
+  };
+
+  drive(speed, hours) {
+    if (notEqualsZero(speed)) {
+      throw new Error('Invalid speed');
+    }
+    if (notEqualsZero(hours)) {
+      throw new Error('Invalid duration');
+    }
+    if (speed > this.maxSpeed) {
+      throw new Error('Car can\'t go this fast');
+    }
+    if (!this.isStarted) {
+      throw new Error('You have to start your car first');
+    }
+    const distance = speed * hours;
+    const consumption = this.fuelConsumption * distance / 100;
+    const damaging = this.damage * distance / 100;
+    if (this.currentFuelVolume < consumption) {
+      throw new Error('You don\'t have enough fuel');
+    }
+    if (this.health < damaging) {
+      throw new Error('Your car won’t make it');
+    }
+    this.#currentFuelVolume -= consumption;
+    this.#health -= damaging;
+    this.#mileage += distance;
+  };
+
+  repair() {
+    if (this.isStarted) {
+      throw new Error('You have to shut down your car first');
+    }
+    if (this.currentFuelVolume !== this.maxFuelVolume) {
+      throw new Error('You have to fill up your gas tank first');
+    }
+    this.#health = 100;
+  };
+
+  getFullAmount() {
+    return (this.currentFuelVolume === this.maxFuelVolume) ? 0 : this.maxFuelVolume - this.currentFuelVolume;
+  };
+}
