@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400&display=swap');
+
+body {
+    user-select: none;
+    font-family: 'Roboto', sans-serif;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    background-color: #DAF0FF;
+    overflow: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+
+.calculator {
+    background-color: #17181A;
+    width: 285px;
+    height: 570px;
+    border-radius: 30px;
+    padding: 12px;
+    box-shadow: 49px 25px 58px -10px rgba(25, 145, 255, 0.58);
+}
+
+.screen {
+    text-align: end;
+    width: 100%;
+    height: 30%;
+    background-color: #222225;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px;
+}
+
+.calculation {
+    color: #818181;
+    font-size: 20px;
+    line-height: 1.5;
+    font-weight: 100;
+    overflow: hidden;
+}
+
+.output {
+    color: #ffffff;
+    font-size: 36px;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.keyboard {
+    padding: 10px 0;
+    width: 100%;
+    height: 70%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    justify-content: center;
+    gap: 10px;
+}
+
+.keyboard > div {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    border-radius: 10px;
+    font-size: 20px;
+    line-height: 1.5;
+}
+
+div.number {
+    background-color: #303136;
+    color: #29A8FF;
+    font-size: 28px;
+    line-height: 1.5;
+}
+
+div.equal-sign {
+    width: 100%;
+    background-color: #1991FF;
+    grid-column: span 4;
+    color: #fff;
+    font-size: 36px;
+    line-height: 1.5;
+}
+
+div.reset {
+    background-color: #616161;
+    color: #A5A5A5;
+}
+
+div.operation {
+    background-color: #005DB2;
+    color: #339DFF;
+    transition: background-color 1s ease 0.05s;
+}
+
+div.operation._active {
+    background-color: #fff;
+    color: #1991FF;
+}
+
+@media (any-hover: hover) {
+    .keyboard > div:hover {
+        box-shadow: 0 4px 25px rgba(51, 157, 255, 0.63);
+    }
+}

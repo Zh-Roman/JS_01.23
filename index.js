@@ -1,316 +1,349 @@
-class Stack {
+document.addEventListener('click', documentActions);
 
-  constructor(limitValue = 10) {
-    if (!Number.isInteger(limitValue) || limitValue < 0) {
-      throw new Error('Invalid limit value');
-    }
-    this.limitValue = limitValue;
-    this.lastElemIndex = 0;
-    this.stackStorage = [];
-  };
+const calculationValue = document.querySelector('.calculation');
+const outputValue = document.querySelector('.output');
 
-  push = (elem) => {
-    if (this.lastElemIndex === this.limitValue) {
-      throw new Error('Limit exceeded');
-    }
-    this.stackStorage[this.lastElemIndex] = elem;
-    this.lastElemIndex++;
-  };
+let calculation;
+let passingResult;
+let lastOperation;
+let backspaceBan;
 
-  pop = () => {
-    if (!this.lastElemIndex) {
-      throw new Error('Empty stack');
-    }
-    this.lastElemIndex--;
-    const poppedElem = this.stackStorage[this.lastElemIndex];
-    this.stackStorage.length = this.lastElemIndex;
-    return poppedElem;
-  };
+function proceedCalc(expression) {
+  let numberX,
+      operation,
+      numberY,
+      nextOperation,
+      lowPriorityOperations = [];
+  const transformedExpr = expression.split(' ').map(item => isNaN(+item) ? item : +item);
 
-  peek = () => !this.lastElemIndex ? null : this.stackStorage[this.lastElemIndex - 1];
-
-  isEmpty = () => !this.lastElemIndex;
-
-  toArray = () => !this.lastElemIndex ? [] : [...this.stackStorage];
-
-  static fromIterable = (iterable) => {
-    if (!iterable[Symbol.iterator]) {
-      throw new Error('Not iterable');
-    }
-    const outputStack = new this(iterable.size ?? iterable.length);
-    if (iterable instanceof Map) {
-      for (let elem of iterable.values()) {
-        outputStack.push(elem);
-      }
-    } else {
-      for (let elem of iterable) {
-        outputStack.push(elem);
+  function calc(arr) {
+    numberX = arr[0];
+    operation = arr[1];
+    numberY = arr[2];
+    if (arr.length === 3) {
+      switch (operation) {
+        case '+':
+          return numberX + numberY;
+        case '-':
+          return numberX - numberY;
+        case '*':
+          return numberX * numberY;
+        case '/':
+          return numberX / numberY;
       }
     }
-    return outputStack;
-  };
-}
-
-class ListNode {
-
-  constructor(value, next = null) {
-    this.value = value;
-    this.next = next;
-  };
-}
-
-class LinkedList {
-
-  constructor() {
-    this.storage = null;
-    this.firstElem = null;
-    this.lastElem = null;
-  };
-
-  append = (elem) => {
-    const newElem = new ListNode(elem);
-    if (!this.storage) {
-      this.firstElem = newElem;
-      this.lastElem = newElem;
-      return this.storage = [newElem];
-    }
-    this.lastElem.next = newElem;
-    this.lastElem = newElem;
-    return this.storage = [...this.storage, newElem];
-  };
-
-  prepend = (elem) => {
-    const newElem = new ListNode(elem, this.firstElem);
-    if (!this.storage) {
-      this.firstElem = newElem;
-      this.lastElem = newElem;
-      return this.storage = [newElem];
-    }
-    this.firstElem = newElem;
-    return this.storage = [newElem, ...this.storage];
-  };
-
-  find = (elem) => {
-    let currentElem = this.firstElem;
-    const findElem = (currNode) => {
-      if (!currNode) {
-        return null;
-      }
-      if (currNode.value === elem) {
-        return currNode;
+    nextOperation = arr[3];
+    if ((nextOperation === '*' || nextOperation === '/') && (operation === '+' || operation === '-')) {
+      lowPriorityOperations[0] = numberX;
+      lowPriorityOperations[1] = operation;
+      arr.splice(0, 2);
+      let newY = calc([...arr]);
+      if (Array.isArray(newY)) {
+        return calc([...lowPriorityOperations, ...newY]);
       } else {
-        return findElem(currNode.next);
-      }
-    };
-    return findElem(currentElem);
-  };
-
-  toArray = () => !this.storage ? [] : [...this.storage];
-
-  static fromIterable = (iterable) => {
-    if (!iterable[Symbol.iterator]) {
-      throw new Error('Not iterable');
-    }
-    const outputList = new this();
-    if (iterable instanceof Map) {
-      for (let elem of iterable.values()) {
-        outputList.append(elem);
+        return calc([...lowPriorityOperations, newY]);
       }
     } else {
-      for (let elem of iterable) {
-        outputList.append(elem);
+      if ((nextOperation === '+' || nextOperation === '-') && (operation === '*' || operation === '/')) {
+        arr.splice(0, 4);
+        const newX = calc([numberX, operation, numberY]);
+        return [newX, nextOperation, ...arr];
       }
+      arr.splice(0, 4);
+      const newX = calc([numberX, operation, numberY]);
+      return calc([newX, nextOperation, ...arr]);
     }
-    return outputList;
-  };
+  }
+
+  let result = calc(transformedExpr);
+  if (Array.isArray(result)) {
+    result = calc(result);
+  }
+  if (Number.isInteger(result) && result.toString().length > 12) {
+    return result.toExponential(4);
+  }
+  if (!Number.isInteger(result)) {
+    if (Math.trunc(result).toString().length > 19) {
+      return result.toExponential(4);
+    }
+    if (result.toString().length > 10) {
+      let integerPartLength = Math.trunc(result).toString().length;
+      if (integerPartLength > 10) {
+        integerPartLength = 10;
+      }
+      if (integerPartLength <= 2) {
+        return +result.toFixed(8);
+      }
+      return +result.toFixed(10 - integerPartLength);
+    }
+  }
+  return result;
 }
 
-function validateStringValue(value, minValue, maxValue) {
-  return (typeof value !== 'string' || value.length < minValue || value.length > maxValue);
+function resetCalc() {
+  if (document.querySelector('._active')) {
+    document.querySelector('._active').classList.remove('_active');
+  }
+  backspaceBan = undefined;
+  lastOperation = undefined;
+  calculation = undefined;
+  passingResult = undefined;
+  calculationValue.innerHTML = '';
+  outputValue.innerHTML = '0';
 }
 
-function validateNumberValue(value, minValue, maxValue) {
-  return (isNaN(value) || typeof value !== 'number' || value < minValue || value > maxValue);
+function closeBrackets() {
+  const lastOpenBracketIndex = calculation.lastIndexOf('(');
+  const openBracket = calculation.split(' ').filter(item => item !== '(');
+  if (openBracket.length === 1) {
+    calculation = openBracket.join('');
+    calculationValue.innerHTML = calculation;
+    return;
+  }
+  const bracketsExpr = calculation.slice(lastOpenBracketIndex + 2);
+  if (bracketsExpr.split(' ').length <= 2) {
+    return;
+  }
+  const bracketsResult = proceedCalc(bracketsExpr);
+  if (!Number.isFinite(bracketsResult)) {
+    resetCalc();
+    outputValue.innerHTML = 'Zero division is impossible';
+    return;
+  }
+  calculation = calculation.replace(calculation.slice(lastOpenBracketIndex), bracketsResult);
+  calculationValue.innerHTML = calculation;
 }
 
-function notEqualsZero(value) {
-  return (!isFinite(value) || typeof value !== 'number' || value <= 0);
-}
+function documentActions(e) {
 
-class Car {
-
-  #brand = '';
-  #model = '';
-  #yearOfManufacturing = 1950;
-  #maxSpeed = 100;
-  #maxFuelVolume = 20;
-  #fuelConsumption = 1;
-  #damage = 1;
-  #currentFuelVolume = 0;
-  #isStarted = false;
-  #mileage = 0;
-  #health = 100;
-
-  set brand(value) {
-    if (validateStringValue(value, 1, 50)) {
-      throw new Error('Invalid brand name');
+  const targetElement = e.target;
+  if (targetElement.closest('[data-reset]')) {
+    return resetCalc();
+  }
+  if (targetElement.closest('[data-backspace]')) {
+    if (calculation) {
+      if (document.querySelector('._active')) {
+        document.querySelector('._active').classList.remove('_active');
+      }
+      const value = calculation.split('');
+      if (calculation.length === 1 || +calculation === backspaceBan || passingResult || passingResult === 0) {
+        return resetCalc();
+      }
+      if (value[value.length - 1] === ' ' || value[value.length - 2] === ' ') {
+        value.length = value.length - 2;
+        calculation = value.join('');
+        calculationValue.innerHTML = calculation;
+        return;
+      }
+      value.length = value.length - 1;
+      calculation = value.join('');
+      calculationValue.innerHTML = calculation;
+      return;
     }
-    this.#brand = value;
-  };
-
-  get brand() {
-    return this.#brand;
-  };
-
-  set model(value) {
-    if (validateStringValue(value, 1, 50)) {
-      throw new Error('Invalid model name');
+  }
+  if (targetElement.closest('[data-equal]')) {
+    if (document.querySelector('._active')) {
+      document.querySelector('._active').classList.remove('_active');
     }
-    this.#model = value;
-  };
-
-  get model() {
-    return this.#model;
-  };
-
-  set yearOfManufacturing(value) {
-    if (validateNumberValue(value, 1950, new Date().getFullYear())) {
-      throw new Error('Invalid year of manufacturing');
+    if (calculation?.split(' ').reverse().find(item => item === '(')) {
+      if (calculation.length === 1) {
+        return;
+      }
+      return closeBrackets();
     }
-    this.#yearOfManufacturing = value;
-  };
-
-  get yearOfManufacturing() {
-    return this.#yearOfManufacturing;
-  };
-
-  set maxSpeed(value) {
-    if (validateNumberValue(value, 100, 330)) {
-      throw new Error('Invalid max speed');
+    if (calculation && isNaN(+calculation[calculation.length - 1]) && calculation[calculation.length - 1] !== '.') {
+      const lastNumber = calculation.split(' ').reverse().find(item => !isNaN(+item));
+      calculation += ` ${lastNumber}`;
+      calculationValue.innerHTML = calculation;
+      passingResult = proceedCalc(calculation);
+      if (!Number.isFinite(passingResult)) {
+        resetCalc();
+        outputValue.innerHTML = 'Zero division is impossible';
+        return;
+      }
+      outputValue.innerHTML = passingResult;
+      lastOperation = calculation.split(' ').splice(-2, 2).join(' ');
+      return;
     }
-    this.#maxSpeed = value;
-  };
-
-  get maxSpeed() {
-    return this.#maxSpeed;
-  };
-
-  set maxFuelVolume(value) {
-    if (validateNumberValue(value, 20, 100)) {
-      throw new Error('Invalid max fuel volume');
+    if ((!calculation && !passingResult) || calculation?.split(' ').length === 1) {
+      return;
     }
-    this.#maxFuelVolume = value;
-  };
-
-  get maxFuelVolume() {
-    return this.#maxFuelVolume;
-  };
-
-  set fuelConsumption(value) {
-    if (notEqualsZero(value)) {
-      throw new Error('Invalid fuel consumption');
+    if (lastOperation) {
+      lastOperation = calculation.split(' ').splice(-2, 2).join(' ');
+      calculation = `${passingResult} ${lastOperation}`;
+      calculationValue.innerHTML = calculation;
+      passingResult = proceedCalc(calculation);
+      outputValue.innerHTML = passingResult;
+      return;
     }
-    this.#fuelConsumption = value;
-  };
+    passingResult = proceedCalc(calculation);
+    if (!Number.isFinite(+passingResult)) {
+      resetCalc();
+      outputValue.innerHTML = 'Zero division is impossible';
+      return;
+    }
+    outputValue.innerHTML = passingResult;
+    lastOperation = calculation.split(' ').splice(-2, 2).join(' ');
+    return;
+  }
+  if (targetElement.closest('[data-number]')) {
+    if (!calculationValue.innerHTML) {
+      if (targetElement.dataset.number === '0' || targetElement.dataset.number === '00') {
+        return;
+      }
+      calculation = `${targetElement.dataset.number}`;
+      calculationValue.innerHTML = calculation;
+      outputValue.innerHTML = '=';
+      return;
+    }
+    if (isNaN(+calculation[calculation.length - 1]) && calculation[calculation.length - 1] !== '.') {
+      lastOperation = undefined;
+      passingResult = undefined;
+      if (document.querySelector('._active')) {
+        document.querySelector('._active').classList.remove('_active');
+      }
+      if (targetElement.dataset.number === '00') {
+        return;
+      }
+      calculation += ` ${targetElement.dataset.number}`;
+      calculationValue.innerHTML = calculation;
+      return;
+    }
 
-  get fuelConsumption() {
-    return this.#fuelConsumption;
-  };
+    const value = calculation.split(' ');
+    if (value[value.length - 1] === '0') {
+      if (targetElement.dataset.number === '0' || targetElement.dataset.number === '00') {
+        return;
+      }
+      value.length = value.length - 1;
+      calculation = `${value.join(' ')} ${targetElement.dataset.number}`;
+      calculationValue.innerHTML = calculation;
+      return;
+    }
+    if (value[value.length - 1].length >= 10) {
+      return;
+    }
+    if (passingResult || passingResult === 0) {
+      lastOperation = undefined;
+      passingResult = undefined;
+      calculation = `${targetElement.dataset.number}`;
+      calculationValue.innerHTML = calculation;
+      outputValue.innerHTML = '=';
+      return;
+    }
+    calculation += `${targetElement.dataset.number}`;
+    calculationValue.innerHTML = calculation;
+    return;
+  }
+  if (targetElement.closest('[data-operation]')) {
+    if (!calculationValue.innerHTML) {
+      targetElement.classList.add('_active');
+      calculation = `0 ${targetElement.dataset.operation}`;
+      calculationValue.innerHTML = calculation;
+      outputValue.innerHTML = '=';
+      return;
+    }
 
-  set damage(value) {
-    if (validateNumberValue(value, 1, 5)) {
-      throw new Error('Invalid damage');
+    if (isNaN(+calculation[calculation.length - 1]) && calculation[calculation.length - 1] !== '.') {
+      if (document.querySelector('._active')) {
+        document.querySelector('._active').classList.remove('_active');
+      }
+      if (calculation[calculation.length - 1] === '(') {
+        return;
+      }
+      targetElement.classList.add('_active');
+      const value = calculation.split('');
+      value.length = value.length - 1;
+      calculation = `${value.join('')}${targetElement.dataset.operation}`;
+      calculationValue.innerHTML = calculation;
+      return;
     }
-    this.#damage = value;
-  };
 
-  get damage() {
-    return this.#damage;
-  };
-
-  get currentFuelVolume() {
-    return this.#currentFuelVolume;
-  };
-
-  get isStarted() {
-    return this.#isStarted;
-  };
-
-  get mileage() {
-    return this.#mileage;
-  };
-
-  get health() {
-    return this.#health;
-  };
-
-  start() {
-    if (this.isStarted) {
-      throw new Error('Car has already started');
-    } else {
-      this.#isStarted = true;
+    if (calculation.split(' ').reverse().find(item => isNaN(+item))) {
+      if (calculation.split(' ').reverse().find(item => item === '(')) {
+        targetElement.classList.add('_active');
+        calculation += ` ${targetElement.dataset.operation}`;
+        calculationValue.innerHTML = calculation;
+        return;
+      }
+      const passedResult = proceedCalc(calculation);
+      if (passedResult === Infinity || passedResult === -Infinity) {
+        resetCalc();
+        outputValue.innerHTML = 'Zero division is impossible';
+        return;
+      }
+      if (((targetElement.dataset.operation === '-' || targetElement.dataset.operation === '+') && calculation.length > 20)
+          || calculation.length > 40) {
+        calculation = passedResult;
+      }
+      if ((targetElement.dataset.operation === '*' || targetElement.dataset.operation === '/') && calculation.length > 20) {
+        const lastSign = calculation.split(' ').reverse().find(item => isNaN(+item));
+        if (lastSign === '+' || lastSign === '-') {
+          calculation = passedResult;
+        }
+      }
+      backspaceBan = passedResult;
+      outputValue.innerHTML = passedResult;
     }
-  };
-
-  shutDownEngine() {
-    if (!this.isStarted) {
-      throw new Error('Car hasn\'t started yet');
-    } else {
-      this.#isStarted = false;
+    if (passingResult || passingResult === 0) {
+      targetElement.classList.add('_active');
+      calculation = `${passingResult} ${targetElement.dataset.operation}`;
+      calculationValue.innerHTML = calculation;
+      return;
     }
-  };
-
-  fillUpGasTank(fuelAmount) {
-    if (notEqualsZero(fuelAmount)) {
-      throw new Error('Invalid fuel amount');
+    targetElement.classList.add('_active');
+    calculation += ` ${targetElement.dataset.operation}`;
+    calculationValue.innerHTML = calculation;
+    return;
+  }
+  if (targetElement.closest('[data-float]')) {
+    if (!calculationValue.innerHTML) {
+      calculation = `0${targetElement.dataset.float}`;
+      calculationValue.innerHTML = calculation;
+      outputValue.innerHTML = '=';
+      return;
     }
-    if ((this.currentFuelVolume + fuelAmount) > this.maxFuelVolume) {
-      throw new Error('Too much fuel');
+    if (isNaN(+calculation[calculation.length - 1]) && calculation[calculation.length - 1] !== '.') {
+      calculation += ` 0${targetElement.dataset.float}`;
+      calculationValue.innerHTML = calculation;
+      return;
     }
-    if (this.isStarted) {
-      throw new Error('You have to shut down your car first');
+    if (calculation.split(' ')[calculation.split(' ').length - 1].split('').find(item => item === '.')
+        || calculation[calculation.length - 1] === '.') {
+      return;
     }
-    this.#currentFuelVolume += fuelAmount;
-  };
-
-  drive(speed, hours) {
-    if (notEqualsZero(speed)) {
-      throw new Error('Invalid speed');
+    if (passingResult || lastOperation) {
+      return;
     }
-    if (notEqualsZero(hours)) {
-      throw new Error('Invalid duration');
+    calculation += targetElement.dataset.float;
+    calculationValue.innerHTML = calculation;
+    return;
+  }
+  if (targetElement.closest('[data-opposite]')) {
+    if (!calculationValue.innerHTML || isNaN(+calculation[calculation.length - 1])) {
+      return;
     }
-    if (speed > this.maxSpeed) {
-      throw new Error('Car can\'t go this fast');
+    const oppositeNumber = +calculation.split(' ')[calculation.split(' ').length - 1] * -1;
+    const newCalculation = calculation.split(' ');
+    newCalculation.splice(-1, 1, oppositeNumber);
+    calculation = newCalculation.join(' ');
+    calculationValue.innerHTML = calculation;
+    return;
+  }
+  if (targetElement.closest('[data-brackets]')) {
+    if (!calculationValue.innerHTML) {
+      calculation = `${targetElement.dataset.brackets[0]}`;
+      calculationValue.innerHTML = calculation;
+      outputValue.innerHTML = '=';
+      return;
     }
-    if (!this.isStarted) {
-      throw new Error('You have to start your car first');
+    if (isNaN(+calculation[calculation.length - 1]) && calculation[calculation.length - 1] !== '.') {
+      calculation += ` ${targetElement.dataset.brackets[0]}`;
+      calculationValue.innerHTML = calculation;
+      return;
     }
-    const distance = speed * hours;
-    const consumption = this.fuelConsumption * distance / 100;
-    const damaging = this.damage * distance / 100;
-    if (this.currentFuelVolume < consumption) {
-      throw new Error('You don\'t have enough fuel');
+    if (calculation.split(' ').reverse().find(item => item === '(')) {
+      return closeBrackets();
     }
-    if (this.health < damaging) {
-      throw new Error('Your car won’t make it');
-    }
-    this.#currentFuelVolume -= consumption;
-    this.#health -= damaging;
-    this.#mileage += distance;
-  };
-
-  repair() {
-    if (this.isStarted) {
-      throw new Error('You have to shut down your car first');
-    }
-    if (this.currentFuelVolume !== this.maxFuelVolume) {
-      throw new Error('You have to fill up your gas tank first');
-    }
-    this.#health = 100;
-  };
-
-  getFullAmount() {
-    return (this.currentFuelVolume === this.maxFuelVolume) ? 0 : this.maxFuelVolume - this.currentFuelVolume;
-  };
+  }
 }
